@@ -34,9 +34,12 @@ public:
 	double eps;
 	double round;
 	double erk;
+	double erkm1;
+	double erkm2;
 
 	double h;
 	double hold;
+	double absh;
 	double x;
 	double xold;
 
@@ -83,7 +86,7 @@ public:
 
 	// block 2 functions
 	void phi_star();
-	void predict1();
+	void predict();
 	double estimate_error();
 
 	// block 3 functions
@@ -91,6 +94,8 @@ public:
 	void order_one();
 
 	// block 4 functions
-
+	void correct();
+	void update_dif();
+	void update_h();
 };
 

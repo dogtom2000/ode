@@ -55,7 +55,7 @@ void Step::block2()
 		phi_star();
 	}
 
-	predict1();
+	predict();
 
 	xold = x;
 	x += h;
@@ -79,7 +79,18 @@ void Step::block3()
 
 void Step::block4()
 {
+	kold = k;
+	hold = h;
 
+	correct();
+
+	f(x, y, yp);
+
+	update_dif();
+
+	if ((knew == km1) || (k == 12)) { phase1 = false; }
+
+	update_h();
 }
 
 char Step::sign(double a)
@@ -136,7 +147,7 @@ void Step::initialize()
 	}
 	sum = sqrt(sum);
 	
-	double absh = abs(h);
+	absh = abs(h);
 	if (eps < 16 * sum * h * h)
 	{
 		absh = 0.25 * sqrt(eps / sum);
@@ -245,7 +256,7 @@ void Step::phi_star()
 	}
 }
 
-void Step::predict1()
+void Step::predict()
 {
 	for (size_t l = 0; l < neqn; l++)
 	{
@@ -283,9 +294,9 @@ void Step::predict1()
 
 double Step::estimate_error()
 {
-	double absh = abs(h);
-	double erkm2 = 0.0;
-	double erkm1 = 0.0;
+	absh = abs(h);
+	erkm2 = 0.0;
+	erkm1 = 0.0;
 	erk = 0.0;
 	for (size_t l = 0; l < neqn; l++)
 	{
@@ -373,4 +384,107 @@ void Step::order_one()
 		h = fouru * abs(x) * sign(h);
 		eps *= 2;
 	}
+}
+
+void Step::correct()
+{
+	double temp1 = h * g[k];
+	if (nornd)
+	{
+		for (size_t l = 0; l < neqn; l++)
+		{
+			y[l] = p[l] + temp1 * (yp[l] - phi[0 * neqn + l]);
+		}
+	}
+	else
+	{
+		for (size_t l = 0; l < neqn; l++)
+		{
+			double rho = temp1 * (yp[l] - phi[0 * neqn + l]) - phi[15 * neqn + l];
+			y[l] = p[l] + rho;
+			phi[14 * neqn + l] = (y[l] - p[l]) - rho;
+		}
+	}
+}
+
+void Step::update_dif()
+{
+	for (size_t l = 0; l < neqn; l++)
+	{
+		phi[k * neqn + l] = yp[l] - phi[0 * neqn + l];
+		phi[kp1 * neqn + l] = phi[k * neqn + l] - phi[kp1 * neqn + l];
+	}
+	for (size_t i = 0; i < k; i++)
+	{
+		for (size_t l = 0; l < neqn; l++)
+		{
+			phi[i * neqn + l] += phi[k * neqn + l];
+		}
+	}
+}
+
+void Step::update_h()
+{
+	double erkp1 = 0.0;
+	if (phase1)
+	{
+		k = kp1;
+		erk = erkp1;
+		h *= 2;
+		return;
+	}
+	if (knew = km1)
+	{
+		k = km1;
+		erk = erkm1;
+	}
+	if (k < ns)
+	{
+		for (size_t l = 0; l < neqn; l++)
+		{
+			erkp1 += pow(phi[kp1 * neqn + l] / wt[l], 2);
+			erkp1 = absh * gstar[k] * sqrt(erkp1);
+		}
+		if (k == 1)
+		{
+			if (erkp1 < 0.5 * erk)
+			{
+				k = kp1;
+				erk = erkp1;
+			}
+			else
+			{
+				if (erkm1 <= fmin(erk, erkp1))
+				{
+					k = km1;
+					erk = erkm1;
+				}
+				else
+				{
+					if ((erkp1 < erk) && (k < 12))
+					{
+						k = kp1;
+						erk = erkp1;
+					}
+				}
+			}
+		}
+	}
+	double hnew = h + h;
+	if (0.5 * eps >= erk * two[k])
+	{
+		h = hnew;
+		return;
+	}
+	hnew = h;
+	if (0.5 * eps >= erk)
+	{
+		return;
+	}
+	size_t temp2 = k + 1;
+	double r = pow((0.5 * eps / erk), 1.0 / temp2);
+	hnew = absh * fmax(0.5, fmin(0.9, r));
+	hnew = fmax(hnew, fouru * abs(x)) * sign(h);
+	h = hnew;
+	return;
 }
