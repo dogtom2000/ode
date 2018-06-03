@@ -61,10 +61,23 @@ void Step::block2()
 	x += h;
 	f(x, p, yp);
 
-	estimate_error();
+	double err = estimate_error();
+	step_success = err <= eps ? true : false;
 }
 
 void Step::block3()
+{
+	phase1 = false;
+	x = xold;
+
+	restore();
+
+	ifail++;
+
+	order_one();
+}
+
+void Step::block4()
 {
 
 }
@@ -96,9 +109,9 @@ void Step::test_inputs()
 	}
 	
 	double round = 0.0;
-	for (size_t i = 0; i < neqn; i++)
+	for (size_t l = 0; l < neqn; l++)
 	{
-		round += pow(y[i] / wt[i], 2);
+		round += pow(y[l] / wt[l], 2);
 	}
 	round = twou * sqrt(round);
 
@@ -115,11 +128,11 @@ void Step::initialize()
 	f(x, y, yp);
 	
 	double sum = 0.0;
-	for (size_t i = 0; i < neqn; i++)
+	for (size_t l = 0; l < neqn; l++)
 	{
-		phi[i * neqn + 0] = yp[i];
-		phi[i * neqn + 1] = 0.0;
-		sum += pow(yp[i] / wt[i], 2);
+		phi[0 * neqn + l] = yp[l];
+		phi[1 * neqn + l] = 0.0;
+		sum += pow(yp[l] / wt[l], 2);
 	}
 	sum = sqrt(sum);
 	
@@ -138,9 +151,9 @@ void Step::initialize()
 	if (0.5 * eps < 100.0 * round)
 	{
 		nornd = false;
-		for (size_t i = 0; i < neqn; i++)
+		for (size_t l = 0; l < neqn; l++)
 		{
-			phi[i * neqn + 14] = 0.0;
+			phi[14 * neqn + l] = 0.0;
 		}
 	}
 }
@@ -150,7 +163,7 @@ void Step::compute_coefficients()
 	beta[ns - 1] = 1.0;
 	alpha[ns - 1] = 1.0 / ns;
 	double temp1 = h * ns;
-	sigma[ns] = 1;
+	sigma[ns] = 1.0;
 	if (k >= ns)
 	{
 		for (size_t i = ns; i < k; i++)
@@ -162,7 +175,6 @@ void Step::compute_coefficients()
 			temp1 = temp2 + h;
 			alpha[i] = h / temp1;
 			sigma[i + 1] = (i + 1) * alpha[i] * sigma[i];
-
 		}
 	}
 	psi[k - 1] = temp1;
@@ -170,11 +182,11 @@ void Step::compute_coefficients()
 
 void Step::initialize_vw()
 {
-	for (size_t i = 0; i < k; i++)
+	for (size_t iq = 0; iq < k; iq++)
 	{
-		double temp3 = (i + 1) * (i + 2);
-		v[i] = 1.0 / temp3;
-		w[i] = v[i];
+		double temp3 = (iq + 1) * (iq + 2);
+		v[iq] = 1.0 / temp3;
+		w[iq] = v[iq];
 	}
 }
 
@@ -196,10 +208,10 @@ void Step::update_vw()
 
 	size_t limit1 = kp1 - ns;
 	double temp5 = alpha[ns - 1];
-	for (size_t i = 0; i < limit1; i++)
+	for (size_t iq = 0; iq < limit1; iq++)
 	{
-		v[i] -= temp5 * v[i + 1];
-		w[i] = v[i];
+		v[iq] -= temp5 * v[iq + 1];
+		w[iq] = v[iq];
 	}
 	g[ns] = w[0];
 }
@@ -212,9 +224,9 @@ void Step::compute_g()
 		{
 			size_t limit2 = kp1 - i;
 			double temp6 = alpha[i - 1];
-			for (size_t j = 0; j < limit2; j++)
+			for (size_t iq = 0; iq < limit2; iq++)
 			{
-				w[j] -= temp6 * w[j + 1];
+				w[iq] -= temp6 * w[iq + 1];
 			}
 			g[i] = w[0];
 		}
@@ -226,20 +238,20 @@ void Step::phi_star()
 	for (size_t i = ns; i < k; i++)
 	{
 		double temp1 = beta[i];
-		for (size_t j = 0; j < neqn; j++)
+		for (size_t l = 0; l < neqn; l++)
 		{
-			phi[i * neqn + j] *= temp1;
+			phi[i * neqn + l] *= temp1;
 		}
 	}
 }
 
 void Step::predict1()
 {
-	for (size_t i = 0; i < neqn; i++)
+	for (size_t l = 0; l < neqn; l++)
 	{
-		phi[i * neqn + kp1] = phi[i * neqn + k];
-		phi[i * neqn + k] = 0.0;
-		p[i] = 0.0;
+		phi[kp1 * neqn + l] = phi[kp1 * neqn + l];
+		phi[k * neqn + l] = 0.0;
+		p[l] = 0.0;
 	}
 	for (size_t j = 0; j < k; j++)
 	{
@@ -247,45 +259,45 @@ void Step::predict1()
 		double temp2 = g[i];
 		for (size_t l = 0; l < neqn; l++)
 		{
-			p[l] += temp2 * phi[l * neqn + i];
-			phi[l * neqn + i] += phi[l * neqn + i + 1];
+			p[l] += temp2 * phi[i * neqn + l];
+			phi[i * neqn + l] += phi[(i + 1) * neqn + l];
 		}
 	}
 	if (nornd)
 	{
-		for (size_t i = 0; i < neqn; i++)
+		for (size_t l = 0; l < neqn; l++)
 		{
-			p[i] = y[i] + h * p[i];
+			p[l] = y[l] + h * p[l];
 		}
 	}
 	else
 	{
-		for (size_t i = 0; i < neqn; i++)
+		for (size_t l = 0; l < neqn; l++)
 		{
-			double tau = h * p[i] - phi[i * neqn + 14];
-			p[i] = y[i] + tau;
-			phi[i * neqn + 15] = (p[i] - y[i]) - tau;
+			double tau = h * p[l] - phi[14 * neqn + l];
+			p[l] = y[l] + tau;
+			phi[15 * neqn + l] = (p[l] - y[l]) - tau;
 		}
 	}
 }
 
-void Step::estimate_error()
+double Step::estimate_error()
 {
 	double absh = abs(h);
 	double erkm2 = 0.0;
 	double erkm1 = 0.0;
-	double erk = 0.0;
-	for (size_t i = 0; i < neqn; i++)
+	erk = 0.0;
+	for (size_t l = 0; l < neqn; l++)
 	{
-		double temp3 = 1.0 / wt[i];
-		double temp4 = yp[i] - phi[i * neqn + 0];
+		double temp3 = 1.0 / wt[l];
+		double temp4 = yp[l] - phi[0 * neqn + l];
 		if (km2 > 0)
 		{
-			erkm2 += pow(((phi[i * neqn + km2] + temp4) * temp3), 2);
+			erkm2 += pow(((phi[km2 * neqn + l] + temp4) * temp3), 2);
 		} 
 		if (km2 >= 0)
 		{
-			erkm1 += pow(((phi[i * neqn + km1] + temp4) * temp3), 2);
+			erkm1 += pow(((phi[km1 * neqn + l] + temp4) * temp3), 2);
 		}
 		erk += pow(temp3 * temp4, 2);
 	}
@@ -316,6 +328,49 @@ void Step::estimate_error()
 		}
 	}
 
-	step_success = err <= eps ? true : false;
+	return err;
 }
 
+void Step::restore()
+{
+	for (size_t i = 0; i < k; i++)
+	{
+		double temp1 = 1.0 / beta[i];
+		size_t ip1 = i + 1;
+		for (size_t l = 0; l < neqn; l++)
+		{
+			phi[i * neqn + l] = temp1 * (phi[i * neqn + l] - phi[ip1 * neqn + l]);
+		}
+		if (k > 1)
+		{
+			for (size_t i = 1; i < k; i++)
+			{
+				psi[i - 1] = psi[i] - h;
+			}
+		}
+	}
+}
+
+void Step::order_one()
+{
+	double temp2 = 0.5;
+	if (ifail > 3)
+	{
+		if (0.5 * eps < 0.25 * erk)
+		{
+			temp2 = sqrt(0.5 * eps / erk);
+		}
+	}
+	if (ifail >= 3)
+	{
+		knew = 1;
+	}
+	h *= temp2;
+	k = knew;
+	if (abs(h) < fouru * abs(x))
+	{
+		crash = true;
+		h = fouru * abs(x) * sign(h);
+		eps *= 2;
+	}
+}

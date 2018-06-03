@@ -33,6 +33,7 @@ public:
 	double fouru;
 	double eps;
 	double round;
+	double erk;
 
 	double h;
 	double hold;
@@ -68,7 +69,7 @@ public:
 	void block1();
 	void block2();
 	void block3();
-	//void block4();
+	void block4();
 
 	// block 0 functions
 	void test_inputs();
@@ -83,8 +84,13 @@ public:
 	// block 2 functions
 	void phi_star();
 	void predict1();
-	void estimate_error();
+	double estimate_error();
 
 	// block 3 functions
+	void restore();
+	void order_one();
+
+	// block 4 functions
+
 };
 
