@@ -115,6 +115,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Step.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ode.cpp" />
+    <ClCompile Include="Step.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
