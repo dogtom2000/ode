@@ -20,7 +20,7 @@ void Step::block0()
 	test_inputs();
 	if (crash) { return; }
 	if (start) { initialize(); }
-
+	ifail = 0;
 }
 
 char Step::sign(double a)
@@ -67,5 +67,34 @@ void Step::test_inputs()
 void Step::initialize()
 {
 	f(x, y, yp);
+	
+	double sum = 0.0;
+	for (size_t i = 0; i < neqn; i++)
+	{
+		phi[i * neqn] = yp[i];
+		phi[i * neqn + 1] = 0.0;
+		sum += pow(yp[i] / wt[i], 2);
+	}
+	sum = sqrt(sum);
+	
+	double absh = abs(h);
+	if (eps < 16 * sum * h * h)
+	{
+		absh = 0.25 * sqrt(eps / sum);
+	}
+	h = fmax(absh, fouru * abs(x)) * sign(h);
+	hold = 0.0;
+	k = 1;
+	start = false;
+	phase1 = true;
+	nornd = true;
 
+	if (0.5 * eps < 100.0 * round)
+	{
+		nornd = false;
+		for (size_t i = 0; i < neqn; i++)
+		{
+			phi[i * neqn + 14] = 0.0;
+		}
+	}
 }

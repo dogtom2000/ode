@@ -12,24 +12,33 @@ public:
 	// logical
 	bool crash;
 	bool start;
+	bool phase1;
+	bool nornd;
 
 
 	// variables
-	unsigned char neqn = 1;
+	unsigned char neqn;
+	unsigned char k;
+	unsigned char ifail;
 
 	double twou;
 	double fouru;
 	double eps;
+	double round;
 
 	double h;
+	double hold;
 	double x;
 
 	
 
-	// arrays
-	double y[1];
-	double yp[1];
-	double wt[1];
+	// variable sized arrays;
+	double* y;
+	double* yp;
+	double* wt;
+	double* phi;
+
+	// fixed size arrays
 
 	// member functions
 	void(*f)(double, double[], double[]);
