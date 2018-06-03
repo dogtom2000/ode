@@ -1,7 +1,5 @@
 #include "Step.h"
 
-
-
 Step::Step()
 {
 	double u = machine();
@@ -56,6 +54,19 @@ void Step::block2()
 	{
 		phi_star();
 	}
+
+	predict1();
+
+	xold = x;
+	x += h;
+	f(x, p, yp);
+
+	estimate_error();
+}
+
+void Step::block3()
+{
+
 }
 
 char Step::sign(double a)
@@ -230,11 +241,81 @@ void Step::predict1()
 		phi[i * neqn + k] = 0.0;
 		p[i] = 0.0;
 	}
-
+	for (size_t j = 0; j < k; j++)
+	{
+		size_t i = k - j - 1;
+		double temp2 = g[i];
+		for (size_t l = 0; l < neqn; l++)
+		{
+			p[l] += temp2 * phi[l * neqn + i];
+			phi[l * neqn + i] += phi[l * neqn + i + 1];
+		}
+	}
+	if (nornd)
+	{
+		for (size_t i = 0; i < neqn; i++)
+		{
+			p[i] = y[i] + h * p[i];
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < neqn; i++)
+		{
+			double tau = h * p[i] - phi[i * neqn + 14];
+			p[i] = y[i] + tau;
+			phi[i * neqn + 15] = (p[i] - y[i]) - tau;
+		}
+	}
 }
 
 void Step::estimate_error()
 {
+	double absh = abs(h);
+	double erkm2 = 0.0;
+	double erkm1 = 0.0;
+	double erk = 0.0;
+	for (size_t i = 0; i < neqn; i++)
+	{
+		double temp3 = 1.0 / wt[i];
+		double temp4 = yp[i] - phi[i * neqn + 0];
+		if (km2 > 0)
+		{
+			erkm2 += pow(((phi[i * neqn + km2] + temp4) * temp3), 2);
+		} 
+		if (km2 >= 0)
+		{
+			erkm1 += pow(((phi[i * neqn + km1] + temp4) * temp3), 2);
+		}
+		erk += pow(temp3 * temp4, 2);
+	}
+	if (km2 > 0)
+	{
+		erkm2 = absh * sigma[km2] * gstar[k - 3] * sqrt(erkm2);
+	}
+	if (km2 >= 0)
+	{
+		erkm1 = absh * sigma[km1] * gstar[km2] * sqrt(erkm1);
+	}
+	double temp5 = absh * sqrt(erk);
+	double err = temp5 * (g[km1] - g[k]);
+	erk = temp5 * sigma[k] * gstar[km1];
+	knew = k;
+	if (km2 > 0)
+	{
+		if (fmax(erkm1, erkm2) < erk)
+		{
+			knew = km1;
+		}
+	}
+	else if (km2 >= 0)
+	{
+		if (erkm1 <= 0.5 * erk)
+		{
+			knew = km1;
+		}
+	}
 
+	step_success = err <= eps ? true : false;
 }
 

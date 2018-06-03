@@ -14,12 +14,14 @@ public:
 	bool start;
 	bool phase1;
 	bool nornd;
+	bool step_success;
 
 
 	// variables
 	size_t neqn;
 	size_t ns;
 	size_t k;
+	size_t knew;
 	size_t kold;
 	size_t kp1;
 	size_t kp2;
@@ -35,6 +37,7 @@ public:
 	double h;
 	double hold;
 	double x;
+	double xold;
 
 	// variable sized arrays;
 	double* y;
@@ -64,19 +67,24 @@ public:
 	void block0();
 	void block1();
 	void block2();
-	//void block3();
+	void block3();
 	//void block4();
 
+	// block 0 functions
 	void test_inputs();
 	void initialize();
+
+	// block 1 functions
 	void compute_coefficients();
 	void initialize_vw();
 	void update_vw();
 	void compute_g();
 
+	// block 2 functions
 	void phi_star();
 	void predict1();
 	void estimate_error();
 
+	// block 3 functions
 };
 
