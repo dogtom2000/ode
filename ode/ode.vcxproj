@@ -115,9 +115,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="De.h" />
     <ClInclude Include="Step.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="De.cpp" />
     <ClCompile Include="ode.cpp" />
     <ClCompile Include="Step.cpp" />
   </ItemGroup>

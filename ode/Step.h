@@ -18,16 +18,16 @@ public:
 
 
 	// variables
-	size_t neqn;
-	size_t ns;
-	size_t k;
-	size_t knew;
-	size_t kold;
-	size_t kp1;
-	size_t kp2;
-	size_t km1;
-	size_t km2;
-	size_t ifail;
+	char neqn;
+	char ns;
+	char k;
+	char knew;
+	char kold;
+	char kp1;
+	char kp2;
+	char km1;
+	char km2;
+	char ifail;
 
 	double twou;
 	double fouru;
@@ -67,6 +67,7 @@ public:
 
 	char sign(double);
 	double machine();
+	void calculate_two();
 	
 	void block0();
 	void block1();
@@ -98,4 +99,3 @@ public:
 	void update_dif();
 	void update_h();
 };
-

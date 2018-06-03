@@ -18,12 +18,18 @@
     <ClInclude Include="Step.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="De.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Step.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="De.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

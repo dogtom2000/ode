@@ -5,8 +5,8 @@ Step::Step()
 	double u = machine();
 	twou = 2 * u;
 	fouru = 4 * u;
+	calculate_two();
 }
-
 
 Step::~Step()
 {
@@ -108,6 +108,15 @@ double Step::machine()
 	}
 	double u = 2 * halfu;
 	return u;
+}
+
+void Step::calculate_two()
+{
+	two[0] = 2;
+	for (size_t i = 1; i < 13; i++)
+	{
+		two[i] = 2.0 * two[i - 1];
+	}
 }
 
 void Step::test_inputs()
