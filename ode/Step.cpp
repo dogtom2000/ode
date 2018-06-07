@@ -1,5 +1,10 @@
 #include "Step.h"
 
+// returns sign of a
+#define sign(a) a > 0 ? 1 : -1
+// returns 1 if a > 0, -1 if a < 0, or 0 if a = 0
+#define aif(a) a > 0 ? 1 : a < 0 ? -1 : 0
+
 Step::Step()
 {
 	double u = machine();
@@ -14,22 +19,34 @@ Step::~Step()
 
 void Step::block0()
 {
+	// test if step size and eps are too small
 	crash = false;
 	test_inputs();
 	if (crash) { return; }
+
+	// if this is the first step inialize
 	if (start) { initialize(); }
+
+	// number of failed iterations is 0
 	ifail = 0;
 }
 
 void Step::block1()
 {
+	// set values offsets
 	kp1 = k + 1;
 	kp2 = k + 2;
 	km1 = k - 1;
 	km2 = k - 2;
 
+	// if step size has changed reset step counter
 	if (h != hold) { ns = 0; }
 	ns = fmin(ns + 1, k + 1);
+	nsi = ns - 1;
+
+	nsp1 = ns + 1;
+	nsip1 = nsi + 1;
+
 	if (k >= ns)
 	{
 		compute_coefficients();
@@ -93,12 +110,6 @@ void Step::block4()
 	update_h();
 }
 
-char Step::sign(double a)
-{
-	int b = a > 0 ? 1 : -1;
-	return b;
-}
-
 double Step::machine()
 {
 	double halfu = 0.5;
@@ -121,6 +132,7 @@ void Step::calculate_two()
 
 void Step::test_inputs()
 {
+	// test if step size is too small, if it is increase it and crash
 	if (abs(h) < fouru * abs(x))
 	{
 		h = fouru * abs(x) * sign(h);
@@ -128,6 +140,7 @@ void Step::test_inputs()
 		return;
 	}
 	
+	// calculate sum to compare to eps in order to control round off error
 	double round = 0.0;
 	for (size_t l = 0; l < neqn; l++)
 	{
@@ -135,6 +148,7 @@ void Step::test_inputs()
 	}
 	round = twou * sqrt(round);
 
+	// test if eps is too small, if it is increase it and crash
 	if (0.5 * eps < round)
 	{
 		eps = 2.0 * round * (1 + fouru);
@@ -145,8 +159,11 @@ void Step::test_inputs()
 
 void Step::initialize()
 {
+	// call f to evaluate derivatives
 	f(x, y, yp);
 	
+	// initialize phi
+	// calculate sum to compare to h in order to select initial step size
 	double sum = 0.0;
 	for (size_t l = 0; l < neqn; l++)
 	{
@@ -156,18 +173,23 @@ void Step::initialize()
 	}
 	sum = sqrt(sum);
 	
+	// test if step size is too small, if it is increase it
 	absh = abs(h);
 	if (eps < 16 * sum * h * h)
 	{
 		absh = 0.25 * sqrt(eps / sum);
 	}
 	h = fmax(absh, fouru * abs(x)) * sign(h);
+
+	// initialize values
 	hold = 0.0;
 	k = 1;
+	kold = 0;
 	start = false;
 	phase1 = true;
 	nornd = true;
 
+	// test if eps is small enough to enable propagated round off control
 	if (0.5 * eps < 100.0 * round)
 	{
 		nornd = false;
@@ -180,13 +202,13 @@ void Step::initialize()
 
 void Step::compute_coefficients()
 {
-	beta[ns - 1] = 1.0;
-	alpha[ns - 1] = 1.0 / ns;
+	beta[nsi] = 1.0;
+	alpha[nsi] = 1.0 / ns;
 	double temp1 = h * ns;
-	sigma[ns] = 1.0;
-	if (k >= ns)
+	sigma[nsip1] = 1.0;
+	if (k > ns)
 	{
-		for (size_t i = ns; i < k; i++)
+		for (size_t i = nsip1; i < k; i++)
 		{
 			size_t im1 = i - 1;
 			double temp2 = psi[im1];
@@ -227,29 +249,26 @@ void Step::update_vw()
 	}
 
 	size_t limit1 = kp1 - ns;
-	double temp5 = alpha[ns - 1];
+	double temp5 = alpha[nsi];
 	for (size_t iq = 0; iq < limit1; iq++)
 	{
 		v[iq] -= temp5 * v[iq + 1];
 		w[iq] = v[iq];
 	}
-	g[ns] = w[0];
+	g[nsip1] = w[0];
 }
 
 void Step::compute_g()
 {
-	if (k > ns)
+	for (size_t i = nsi + 2; i < kp1; i++)
 	{
-		for (size_t i = ns + 1; i < kp1; i++)
+		size_t limit2 = kp2 - i - 1;
+		double temp6 = alpha[i - 1];
+		for (size_t iq = 0; iq < limit2; iq++)
 		{
-			size_t limit2 = kp1 - i;
-			double temp6 = alpha[i - 1];
-			for (size_t iq = 0; iq < limit2; iq++)
-			{
-				w[iq] -= temp6 * w[iq + 1];
-			}
-			g[i] = w[0];
+			w[iq] -= temp6 * w[iq + 1];
 		}
+		g[i] = w[0];
 	}
 }
 

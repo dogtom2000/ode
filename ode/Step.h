@@ -20,6 +20,9 @@ public:
 	// variables
 	char neqn;
 	char ns;
+	char nsp1;
+	char nsi;
+	char nsip1;
 	char k;
 	char knew;
 	char kold;
