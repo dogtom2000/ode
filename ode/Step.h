@@ -21,8 +21,8 @@ public:
 	char neqn;
 	char ns;
 	char nsp1;
-	char nsi;
-	char nsip1;
+	char nsp2;
+	char nsm2;
 	char k;
 	char knew;
 	char kold;
@@ -37,8 +37,10 @@ public:
 	double eps;
 	double round;
 	double erk;
+	double erkp1;
 	double erkm1;
 	double erkm2;
+	double err;
 
 	double h;
 	double hold;
@@ -68,7 +70,6 @@ public:
 	// member functions
 	void(*f)(double, double[], double[]);
 
-	char sign(double);
 	double machine();
 	void calculate_two();
 	
@@ -91,7 +92,7 @@ public:
 	// block 2 functions
 	void phi_star();
 	void predict();
-	double estimate_error();
+	void estimate_error();
 
 	// block 3 functions
 	void restore();
