@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cmath>
 class Step
 {
@@ -46,10 +47,13 @@ public:
 	double absh;
 	double x;
 	double xold;
+	double xout;
 
 	// variable sized arrays;
 	double* y;
 	double* yp;
+	double* yout;
+	double* ypout;
 	double* wt;
 	double* p;
 	double* phi;
@@ -59,17 +63,21 @@ public:
 	double beta[12];
 	double psi[12];
 	double sigma[13];
+	double rho[13];
 
 	double v[12];
 	double w[12];
 	double g[13];
-	double gstar[13];
+	const double gstar[13]{ 0.500, 0.0833, 0.0417, 0.0264, 0.0188, 0.0143, 0.0114, 0.00936, 0.00789, 0.00679, 0.00592, 0.00524, 0.00468 };
 	const double two[13]{ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
 
 	// member functions
-	void(*f)(double, double[], double[]);
+	void(*f)(double, double*, double*);
 
+	// functions called from De
 	void take_step();
+	void interp();
+	void extrap();
 	
 	void block0();
 	void block1();
@@ -100,4 +108,8 @@ public:
 	void correct();
 	void update_dif();
 	void update_h();
+
+	// inline functions
+	template <class T>
+	int sgn(T a) { return (a > T(0)) - (a < T(0)); }
 };

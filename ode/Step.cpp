@@ -1,7 +1,6 @@
 #include "Step.h"
-#include <algorithm>
+#include <iostream>
 
-#define sign(a) (a > 0 ? 1 : -1)
 #define aif(a) (a > 0 ? 'p' : a < 0 ? 'n' : '0')
 #define p1(a) (a + 1)
 #define m1(a) (a - 1)
@@ -11,6 +10,9 @@ using namespace std;
 
 Step::Step()
 {
+	g[0] = 1.0;
+	g[1] = 0.5;
+	sigma[0] = 1.0;
 }
 
 Step::~Step()
@@ -20,6 +22,83 @@ Step::~Step()
 void Step::take_step()
 {
 	block0();
+	if (crash) { return; }
+
+	while (true)
+	{
+		block1();
+		block2();
+		if (!step_success)
+		{
+			block3();
+			if (crash) { return; }
+		}
+		else
+		{
+			block4();
+			return;
+		}
+	}
+}
+
+void Step::interp()
+{
+	double hi = xout - x;
+	unsigned char  ki = kold + 1;
+	unsigned char  kip1 = ki + 1;
+
+	for (size_t i = 0; i < ki; i++)
+	{
+		size_t temp1 = i + 1;
+		w[i] = 1.0 / temp1;
+	}
+	double term = 0.0;
+
+	for (size_t j = 1; j < ki; j++)
+	{
+		int jm1 = j - 1;
+		double psijm1 = psi[jm1];
+		double gamma = (hi + term) / psijm1;
+		double eta = hi / psijm1;
+		size_t limit1 = kip1 - (j + 1);
+		for (size_t i = 0; i < limit1; i++)
+		{
+			w[i] = gamma * w[i] - eta * w[i + 1];
+		}
+		g[j] = w[0];
+		rho[j] = gamma * rho[jm1];
+		term = psijm1;
+	}
+
+	for (size_t l = 0; l < neqn; l++)
+	{
+		ypout[l] = 0.0;
+		yout[l] = 0.0;
+	}
+	for (size_t j = 0; j < ki; j++)
+	{
+		int i = kip1 - (j + 1);
+		double temp2 = g[i - 1];
+		double temp3 = rho[i - 1];
+		for (size_t l = 0; l < neqn; l++)
+		{
+			yout[l] += temp2 * phi(l, i);
+			ypout[l] += temp3 * phi(l, i);
+		}
+	}
+	for (size_t l = 0; l < neqn; l++)
+	{
+		yout[l] = y[l] + h * yout[l];
+	}
+}
+
+void Step::extrap()
+{
+	f(x, y, yp);
+	for (size_t l = 0; l < neqn; l++)
+	{
+		yout[l] = y[l] + h * yp[l];
+	}
 }
 
 void Step::block0()
@@ -116,13 +195,13 @@ void Step::test_inputs()
 	// test if step size is too small, if it is increase it and crash
 	if (abs(h) < fouru * abs(x))
 	{
-		h = fouru * abs(x) * sign(h);
+		h = fouru * abs(x) * sgn(h);
 		crash = true;
 		return;
 	}
 	
 	// calculate sum to compare to eps in order to control round off error
-	double round = 0.0;
+	round = 0.0;
 	for (size_t l = 0; l < neqn; l++)
 	{
 		round += pow(y[l] / wt[l], 2);
@@ -160,7 +239,7 @@ void Step::initialize()
 	{
 		absh = 0.25 * sqrt(eps / sum);
 	}
-	h = max(absh, fouru * abs(x)) * sign(h);
+	h = max(absh, fouru * abs(x)) * sgn(h);
 
 	// initialize values
 	hold = 0.0;
@@ -391,7 +470,7 @@ void Step::order_one()
 	if (abs(h) < fouru * abs(x))
 	{
 		crash = true;
-		h = fouru * abs(x) * sign(h);
+		h = fouru * abs(x) * sgn(h);
 		eps *= 2;
 	}
 }
@@ -512,7 +591,7 @@ void Step::update_h()
 	size_t temp2 = k + 1;
 	double r = pow((0.5 * eps / erk), 1.0 / temp2);
 	hnew = absh * max(0.5, min(0.9, r));
-	hnew = max(hnew, fouru * abs(x)) * sign(h);
+	hnew = max(hnew, fouru * abs(x)) * sgn(h);
 	h = hnew;
 	return;
 }

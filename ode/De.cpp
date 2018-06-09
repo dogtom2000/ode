@@ -1,25 +1,28 @@
 #include "De.h"
-#include <algorithm>
 
-#define sign(a) (a > 0 ? 1 : -1)
 #define phi(j, i) phi[j + i * neqn]
 
 using namespace std;
 
-De::De(void(*f)(double, double[], double[]), unsigned char neqn, double* y, double t, double tout, double relerr, double abserr, double* work) : f(f), neqn(neqn), y(y), t(t), tout(tout), relerr(relerr), abserr(abserr)
+De::De(void(*f)(double, double*, double*), unsigned char neqn, double* y, double t, double tout, double relerr, double abserr, double* work)
+	: neqn(neqn), y(y), t(t), tout(tout), relerr(relerr), abserr(abserr)
 {
-	yp = work + 0 * neqn;
-	yy = work + 1 * neqn;
-	wt = work + 2 * neqn;
-	ypout = work + 3 * neqn;
-	yout = work + 4 * neqn;
-	phi = work + 5 * neqn;
-
 	iflag = 1;
-	machine();
+	
+	destep.y		= work + 0 * neqn;
+	destep.yp		= work + 1 * neqn;
+	destep.yout		= work + 2 * neqn;
+	destep.ypout	= work + 3 * neqn;
+	destep.p		= work + 4 * neqn;
+	destep.wt		= work + 5 * neqn;
+	destep.phi		= work + 6 * neqn;
 
-	destep.y = yy;
-	destep.y[0] = 5.0;
+	destep.f = f;
+
+	double u = machine();
+	destep.twou = 2 * u;
+	destep.fouru = 4 * u;
+	destep.neqn = neqn;
 }
 
 
@@ -37,19 +40,18 @@ void De::step()
 	setup();
 
 	// determine if work quantities need set
-	if ((iflag == 1) || (isnold < 0) || (delsn * del <= 0)) { first_step(); }
+	if ((iflag == 1) || (isnold < 0) || (delsgn * del <= 0)) { first_step(); }
 
-	//while (true)
-	for (size_t run = 0; run < 3; run++)
+	while (true)
 	{
 		// beyond tout?
-		if (abs(x - t) >= absdel) {
+		if (abs(destep.x - t) >= absdel) {
 			btout();
 			return;
 		}
 
 		// close to tout and cannot pass?
-		if ((isn < 0) || (abs(tout - x) < destep.fouru * abs(x)))
+		if ((isgn < 0) || (abs(tout - destep.x) < destep.fouru * abs(destep.x)))
 		{
 			ctout();
 			return;
@@ -74,22 +76,18 @@ void De::step()
 			increment();
 			
 		}
-
-
 	}
-
 }
 
-void De::machine()
+double De::machine()
 {
 	double halfu = 0.5;
 	while (1 + halfu > 1)
 	{
 		halfu *= 0.5;
 	}
-	 u = 2 * halfu;
-	 twou = 2 * u;
-	 fouru = 4 * u;
+	double u = 2 * halfu;
+	return u;
 }
 
 void De::test_inputs()
@@ -97,10 +95,10 @@ void De::test_inputs()
 	if (neqn > 100) { iflag = 6;  return; }
 	if (t == tout) { iflag = 6;  return; }
 	if (relerr < 0 || abserr < 0) { iflag = 6;  return; }
-	eps = max(relerr, abserr);
-	if (eps <= 0) { iflag = 6;  return; }
+	destep.eps = max(relerr, abserr);
+	if (destep.eps <= 0) { iflag = 6;  return; }
 	if (iflag == 0) { iflag = 6; return; }
-	isn = sign(iflag);
+	isgn = sgn(iflag);
 	iflag = abs(iflag);
 	if (iflag == 1)
 	{
@@ -118,81 +116,77 @@ void De::setup()
 	del = tout - t;
 	absdel = abs(del);
 	tend = 10.0 * del;
-	if (isn < 0) { tend = tout; }
+	if (isgn < 0) { tend = tout; }
 	nostep = 0;
 	kle4 = 0;
 	stiff = false;
-	releps = relerr / eps;
-	abseps = abserr / eps;
+	releps = relerr / destep.eps;
+	abseps = abserr / destep.eps;
 }
 
 void De::first_step()
 {
-	start = true;
-	x = t;
-	delsn = sign(del);
-	h = max(abs(tout - x), fouru * abs(x)) * sign(tout - x);
+	destep.start = true;
+	destep.x = t;
+	delsgn = sgn(del);
+	destep.h = max(abs(tout - destep.x), destep.fouru * abs(destep.x)) * sgn(tout - destep.x);
 	for (size_t l = 0; l < neqn; l++)
 	{
-		yy[l] = y[l];
+		destep.y[l] = y[l];
 	}
 }
 
 void De::btout()
 {
-	interp();
+	destep.xout = tout;
+	destep.interp();
 	iflag = 2;
 	t = tout;
-	isnold = isn;
+	isnold = isgn;
 }
 
 void De::ctout()
 {
-	h = tout - x;
-	f(x, yy, yp);
-	for (size_t l = 0; l < neqn; l++)
-	{
-		y[l] = yy[l] + h * yp[l];
-	}
+	destep.h = tout - destep.x;
+	destep.extrap();
 	iflag = 2;
 	t = tout;
 	told = t;
-	isnold = isn;
-
+	isnold = isgn;
 }
 
 void De::work()
 {
-	iflag = isn * 4;
-	if (stiff) { iflag = isn * 5; }
+	iflag = isgn * 4;
+	if (stiff) { iflag = isgn * 5; }
 	for (size_t l = 0; l < neqn; l++)
 	{
-		y[l] = yy[l];
+		y[l] = destep.y[l];
 	}
-	t = x;
+	t = destep.x;
 	told = t;
 	isnold = 1;
 }
 
 void De::weights()
 {
-	h = min(abs(h), abs(tend - x)) * sign(h);
+	destep.h = min(abs(destep.h), abs(tend - destep.x)) * sgn(destep.h);
 	for (size_t l = 0; l < neqn; l++)
 	{
-		wt[l] = releps * abs(yy[l]) + abseps;
+		destep.wt[l] = releps * abs(destep.y[l]) + abseps;
 	}
 }
 
 void De::tolerances()
 {
-	iflag = isn * 3;
-	relerr = eps * releps;
-	abserr = eps * abseps;
+	iflag = isgn * 3;
+	relerr = destep.eps * releps;
+	abserr = destep.eps * abseps;
 	for (size_t l = 0; l < neqn; l++)
 	{
-		y[l] = yy[l];
+		y[l] = destep.y[l];
 	}
-	t = x;
+	t = destep.x;
 	told = t;
 	isnold = 1;
 }
@@ -204,55 +198,4 @@ void De::increment()
 	if (destep.kold > 4) { kle4 = 0; }
 	if (kle4 > 50) { stiff = true; }
 
-}
-
-void De::interp()
-{
-	double hi = xout - x;
-	unsigned char  ki = destep.kold + 1;
-	unsigned char  kip1 = ki + 1;
-
-	for (size_t i = 0; i < ki; i++)
-	{
-		size_t temp1 = i + 1;
-		w[i] = 1.0 / temp1;
-	}
-	double term = 0.0;
-
-	for (size_t j = 1; j < ki; j++)
-	{
-		int jm1 = j - 1;
-		double psijm1 = destep.psi[jm1];
-		double gamma = (hi + term) / psijm1;
-		double eta = hi / psijm1;
-		size_t limit1 = kip1 - (j + 1);
-		for (size_t i = 0; i < limit1; i++)
-		{
-			w[i] = gamma * w[i] - eta * w[i + 1];
-		}
-		g[j] = w[0];
-		rho[j] = gamma * rho[jm1];
-		term = psijm1;
-	}
-
-	for (size_t l = 0; l < neqn; l++)
-	{
-		ypout[l] = 0.0;
-		yout[l] = 0.0;
-	}
-	for (size_t j = 0; j < ki; j++)
-	{
-		int i = kip1 - (j + 1);
-		double temp2 = g[i - 1];
-		double temp3 = rho[i - 1];
-		for (size_t l = 0; l < neqn; l++)
-		{
-			yout[l] += temp2 * destep.phi(l, i);
-			ypout[l] += temp3 * destep.phi(l, i);
-		}
-	}
-	for (size_t l = 0; l < neqn; l++)
-	{
-		yout[l] = y[l] + h * yout[l];
-	}
 }
