@@ -19,7 +19,7 @@ Step::~Step()
 
 void Step::take_step()
 {
-
+	block0();
 }
 
 void Step::block0()

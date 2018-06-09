@@ -6,7 +6,7 @@
 
 using namespace std;
 
-De::De(void(*f)(double, double[], double[]), unsigned char neqn, double* y, double t, double tout, double relerr, double abserr, char iflag, double* work) : f(f), neqn(neqn), y(y), t(t), tout(tout), relerr(relerr), abserr(abserr), iflag(iflag)
+De::De(void(*f)(double, double[], double[]), unsigned char neqn, double* y, double t, double tout, double relerr, double abserr, double* work) : f(f), neqn(neqn), y(y), t(t), tout(tout), relerr(relerr), abserr(abserr)
 {
 	yp = work + 0 * neqn;
 	yy = work + 1 * neqn;
@@ -14,7 +14,12 @@ De::De(void(*f)(double, double[], double[]), unsigned char neqn, double* y, doub
 	ypout = work + 3 * neqn;
 	yout = work + 4 * neqn;
 	phi = work + 5 * neqn;
+
+	iflag = 1;
 	machine();
+
+	destep.y = yy;
+	destep.y[0] = 5.0;
 }
 
 
@@ -35,7 +40,8 @@ void De::step()
 	if ((iflag == 1) || (isnold < 0) || (delsn * del <= 0)) { first_step(); }
 
 	//while (true)
-	//{
+	for (size_t run = 0; run < 3; run++)
+	{
 		// beyond tout?
 		if (abs(x - t) >= absdel) {
 			btout();
@@ -66,10 +72,11 @@ void De::step()
 		else
 		{
 			increment();
+			
 		}
 
 
-	//}
+	}
 
 }
 
@@ -87,7 +94,7 @@ void De::machine()
 
 void De::test_inputs()
 {
-	if (neqn < 0) { iflag = 6;  return; }
+	if (neqn > 100) { iflag = 6;  return; }
 	if (t == tout) { iflag = 6;  return; }
 	if (relerr < 0 || abserr < 0) { iflag = 6;  return; }
 	eps = max(relerr, abserr);

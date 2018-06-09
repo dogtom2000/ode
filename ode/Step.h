@@ -18,18 +18,18 @@ public:
 
 	// variables
 	unsigned char neqn;
-	char ns;
-	char nsp1;
-	char nsp2;
-	char nsm2;
-	char k;
-	char knew;
-	char kold;
-	char kp1;
-	char kp2;
+	unsigned char ns;
+	unsigned char nsp1;
+	unsigned char nsp2;
+	unsigned char nsm2;
+	unsigned char k;
+	unsigned char knew;
+	unsigned char kold;
+	unsigned char kp1;
+	unsigned char kp2;
 	char km1;
 	char km2;
-	char ifail;
+	unsigned char ifail;
 
 	double twou;
 	double fouru;

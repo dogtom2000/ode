@@ -24,12 +24,12 @@ int main()
 	double relerr = 1e-5;
 	double abserr = 1e-8;
 
-	De myDe(f, neqn, y, t, tout, relerr, abserr, 1, work);
-	myDe.step();
+	De myDe(f, neqn, y, t, tout, relerr, abserr, work);
+	// myDe.step();
 
-	cout << myDe.wt[0];
+	cout << myDe.destep.alpha;
 	cout << '\n';
-	cout << myDe.yy[1];
+	cout << myDe.yy[0];
 	cout << '\n';
 	cout << myDe.yy[2];
 	cout << '\n';

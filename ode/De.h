@@ -8,7 +8,7 @@ public:
 	// constants
 
 	// constructor and destructor
-	De(void(*)(double, double[], double[]), unsigned char, double*, double, double, double, double, char, double*);
+	De(void(*)(double, double[], double[]), unsigned char, double*, double, double, double, double, double*);
 	~De();
 
 	Step destep;
