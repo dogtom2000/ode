@@ -16,9 +16,8 @@ public:
 	bool nornd;
 	bool step_success;
 
-
 	// variables
-	char neqn;
+	unsigned char neqn;
 	char ns;
 	char nsp1;
 	char nsp2;
@@ -65,13 +64,12 @@ public:
 	double w[12];
 	double g[13];
 	double gstar[13];
-	double two[13];
+	const double two[13]{ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
 
 	// member functions
 	void(*f)(double, double[], double[]);
 
-	double machine();
-	void calculate_two();
+	void take_step();
 	
 	void block0();
 	void block1();

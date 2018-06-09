@@ -1,4 +1,5 @@
 #include "Step.h"
+#include <algorithm>
 
 #define sign(a) (a > 0 ? 1 : -1)
 #define aif(a) (a > 0 ? 'p' : a < 0 ? 'n' : '0')
@@ -6,17 +7,19 @@
 #define m1(a) (a - 1)
 #define phi(j, i) phi[j + i * neqn]
 
+using namespace std;
 
 Step::Step()
 {
-	double u = machine();
-	twou = 2 * u;
-	fouru = 4 * u;
-	calculate_two();
 }
 
 Step::~Step()
 {
+}
+
+void Step::take_step()
+{
+
 }
 
 void Step::block0()
@@ -43,7 +46,7 @@ void Step::block1()
 
 	// if step size has changed reset step counter
 	if (h != hold) { ns = 0; }
-	ns = fmin(ns + 1, kold + 1);
+	ns = min(ns + 1, kold + 1);
 	nsp1 = ns + 1;
 
 	if (k >= ns)
@@ -108,26 +111,6 @@ void Step::block4()
 	}
 }
 
-double Step::machine()
-{
-	double halfu = 0.5;
-	while (1 + halfu > 1)
-	{
-		halfu *= 0.5;
-	}
-	double u = 2 * halfu;
-	return u;
-}
-
-void Step::calculate_two()
-{
-	two[0] = 2;
-	for (size_t i = 1; i < 13; i++)
-	{
-		two[i] = 2.0 * two[i - 1];
-	}
-}
-
 void Step::test_inputs()
 {
 	// test if step size is too small, if it is increase it and crash
@@ -177,7 +160,7 @@ void Step::initialize()
 	{
 		absh = 0.25 * sqrt(eps / sum);
 	}
-	h = fmax(absh, fouru * abs(x)) * sign(h);
+	h = max(absh, fouru * abs(x)) * sign(h);
 
 	// initialize values
 	hold = 0.0;
@@ -352,6 +335,7 @@ void Step::estimate_error()
 	case '0':
 		erkm1 = absh * sigma[m1(k)] * gstar[m1(km1)] * sqrt(erkm1);
 	case 'n':
+		break;
 	}
 
 	double temp5 = absh * sqrt(erk);
@@ -361,7 +345,7 @@ void Step::estimate_error()
 
 	if (km2 > 0)
 	{
-		if (fmax(erkm1, erkm2) < erk || (erkm1 <= 0.5 * erk))
+		if (max(erkm1, erkm2) < erk || (erkm1 <= 0.5 * erk))
 		{
 			knew = km1;
 		}
@@ -414,7 +398,7 @@ void Step::order_one()
 
 void Step::correct()
 {
-	double temp1 = h * g[k];
+	double temp1 = h * g[m1(k)];
 	if (nornd)
 	{
 		for (size_t l = 0; l < neqn; l++)
@@ -473,7 +457,7 @@ void Step::update_h()
 		}
 		else
 		{
-			if (erkm1 <= fmin(erk, erkp1))
+			if (erkm1 <= min(erk, erkp1))
 			{
 				k = km1;
 				erk = erkm1;
@@ -527,8 +511,8 @@ void Step::update_h()
 	}
 	size_t temp2 = k + 1;
 	double r = pow((0.5 * eps / erk), 1.0 / temp2);
-	hnew = absh * fmax(0.5, fmin(0.9, r));
-	hnew = fmax(hnew, fouru * abs(x)) * sign(h);
+	hnew = absh * max(0.5, min(0.9, r));
+	hnew = max(hnew, fouru * abs(x)) * sign(h);
 	h = hnew;
 	return;
 }

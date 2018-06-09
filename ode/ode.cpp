@@ -1,66 +1,40 @@
 #include <iostream>
-#include "Step.h"
+#include "De.h"
+#define sign(a) (a > 0 ? 1 : -1)
+
+using namespace std;
 
 
-double test(double a[][3]) {
-
-	double b = a[1][2];
-	return b;
+void f(double x, double* y, double* yp)
+{
+	yp[0] = y[2];
+	yp[1] = y[3];
+	yp[2] = -3.986e14 / abs(y[0] * y[0]) * sign(y[0]);
+	yp[3] = -3.986e14 / abs(y[1] * y[1]) * sign(y[0]);
 }
-
-
 
 int main()
 {
-	double arr1[2][3] =
-	{
-		{0, 1, 2},
-		{4, 5, 6 }
-	};
+	const unsigned char neqn = 4;
+	double y[neqn] = { 0, 6671000, 7800, 0 };
+	double work[neqn * 21];
 
-	double out = test(arr1);
+	double t = 0;
+	double tout = 60 * 90;
+	double relerr = 1e-5;
+	double abserr = 1e-8;
 
-	double arr2[5] = { 0, 1, 2, 3, 4 };
+	De myDe(f, neqn, y, t, tout, relerr, abserr, 1, work);
+	myDe.step();
 
-	Step myStep;
-	myStep.y = arr2;
-
-	out = myStep.y[3];
-
-	int ns = 4;
-	int nsp1 = 5;
-	int nsp2 = 6;
-	int k = 8;
-	int kp1 = 9;
-	int kp2 = 10;
-
-	std::cout << "Fortran indicies" << '\n';
-	for (size_t i = nsp2; i <= kp1 ; i++)
-	{
-		int limit2 = kp2 - i;
-		for (size_t j = 1; j <= limit2; j++)
-		{
-			std::cout << i << ' ' << j << '\n';
-		}
-	}
-
-	std::cout << "c++ indicies" << '\n';
-
-	for (size_t i = nsp1; i < kp1; i++)
-	{
-		size_t limit2 = kp1 - i;
-		for (size_t j = 0; j < limit2; j++)
-		{
-			std::cout << i << ' ' << j << '\n';
-		}
-	}
-
-	char a;
-	a = 69;
-	
-	a *= -1;
-	std::cout << a;
-
+	cout << myDe.wt[0];
+	cout << '\n';
+	cout << myDe.yy[1];
+	cout << '\n';
+	cout << myDe.yy[2];
+	cout << '\n';
+	cout << myDe.yy[3];
+	cout << '\n';
 
 	return 0;
 }
