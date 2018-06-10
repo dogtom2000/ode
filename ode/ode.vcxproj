@@ -116,11 +116,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="De.h" />
+    <ClInclude Include="Integrate.h" />
+    <ClInclude Include="Ode.h" />
     <ClInclude Include="Step.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="De.cpp" />
-    <ClCompile Include="ode.cpp" />
+    <ClCompile Include="Integrate.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Ode.cpp" />
     <ClCompile Include="Step.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
