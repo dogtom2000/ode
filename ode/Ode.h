@@ -9,7 +9,7 @@ class Ode
 {
 public:
 	// constants
-	const unsigned int maxnum{ 500 };
+	const unsigned int maxnum{ 5000 };
 
 	// constructor and destructor
 	Ode(void(*)(double, double*, double*), unsigned int, double*, double, double, double, double, double*);

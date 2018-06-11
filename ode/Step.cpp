@@ -46,22 +46,24 @@ void Step::take_step()
 void Step::interp()
 {
 	double hi = xout - x;
-	unsigned char  ki = kold + 1;
-	unsigned char  kip1 = ki + 1;
+	unsigned int ki = kold + 1;
+	unsigned int kip1 = ki + 1;
 
 	for (size_t i = 0; i < ki; i++)
 	{
-		wi[i] = 1.0 / p1(i);
+		unsigned int temp1 = i + 1;
+		wi[i] = 1.0 / temp1;
 	}
+
 	double term = 0.0;
 
 	for (size_t j = 1; j < ki; j++)
 	{
-		int jm1 = j - 1;
+		unsigned int jm1 = j - 1;
 		double psijm1 = psi[jm1];
 		double gamma = (hi + term) / psijm1;
 		double eta = hi / psijm1;
-		size_t limit1 = kip1 - p1(j);
+		unsigned int limit1 = kip1 - j - 1;
 		for (size_t i = 0; i < limit1; i++)
 		{
 			wi[i] = gamma * wi[i] - eta * wi[i + 1];
@@ -73,9 +75,10 @@ void Step::interp()
 
 	for (size_t l = 0; l < neqn; l++)
 	{
-		ypout[l] = 0.0;
 		yout[l] = 0.0;
+		ypout[l] = 0.0;
 	}
+
 	for (size_t j = 0; j < ki; j++)
 	{
 		int i = kip1 - p1(j);
@@ -83,8 +86,8 @@ void Step::interp()
 		double temp3 = rho[m1(i)];
 		for (size_t l = 0; l < neqn; l++)
 		{
-			yout[l] += temp2 * phi(l, i);
-			ypout[l] += temp3 * phi(l, i);
+			yout[l] += temp2 * phi(l, m1(i));
+			ypout[l] += temp3 * phi(l, m1(i));
 		}
 	}
 	for (size_t l = 0; l < neqn; l++)
@@ -177,7 +180,7 @@ void Step::block4()
 
 	update_dif();
 
-	double erkp1 = 0.0;
+	erkp1 = 0.0;
 	if ((knew == km1) || (k == 12)) { phase1 = false; }
 	if (phase1)
 	{

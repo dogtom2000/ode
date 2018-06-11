@@ -32,6 +32,8 @@ public:
 	int km2;
 	unsigned int ifail;
 
+	unsigned int maxk;
+
 	double twou;
 	double fouru;
 	double eps;

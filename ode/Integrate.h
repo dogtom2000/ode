@@ -90,7 +90,7 @@ public:
 	void block4();
 
 	// block 0 functions
-	bool test_inputs();
+	void test_inputs();
 	void setup();
 
 	// block 1 functions

@@ -22,6 +22,8 @@ Ode::Ode(void(*f)(double, double*, double*), unsigned int neqn, double* y, doubl
 	integrate.neqn = neqn;
 	integrate.f = f;
 
+	integrate.maxk = 1;
+
 	double halfu = 0.5;
 	while (1 + halfu > 1)
 	{
@@ -67,8 +69,11 @@ void Ode::step()
 
 		integrate.take_step();
 
+		std::cout << integrate.k;
+		std::cout << ' ';
+
 		if (integrate.crash)
-		{
+		{			
 			end_tol();
 			return;
 		}
