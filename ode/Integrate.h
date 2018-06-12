@@ -1,4 +1,5 @@
 #pragma once
+
 class Integrate
 {
 public:
@@ -29,6 +30,10 @@ public:
 	int km1;
 	int km2;
 
+
+
+
+
 	double twou;
 	double fouru;
 
@@ -56,11 +61,6 @@ public:
 	double* wt;
 	double* p;
 	double* phi;
-	double* phi1;
-	double* phi2;
-	double* phi3;
-	double* phi4;
-	double* phi5;
 
 	// fixed size arrays
 	double alpha[12];

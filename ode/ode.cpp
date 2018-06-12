@@ -1,5 +1,5 @@
 #include "Ode.h"
-#include <iostream>
+#include <algorithm>
 
 Ode::Ode(void(*f)(double, double*, double*), unsigned int neqn, double* y, double t, double tout, double relerr, double abserr, double* work)
 	: neqn(neqn), y(y), t(t), tout(tout), relerr(relerr), abserr(abserr)
@@ -13,16 +13,9 @@ Ode::Ode(void(*f)(double, double*, double*), unsigned int neqn, double* y, doubl
 	integrate.p = work + 4 * neqn;
 	integrate.wt = work + 5 * neqn;
 	integrate.phi = work + 6 * neqn;
-	integrate.phi1 = work + 6 * neqn + 1;
-	integrate.phi2 = work + 6 * neqn + 2;
-	integrate.phi3 = work + 6 * neqn + 3;
-	integrate.phi4 = work + 6 * neqn + 4;
-	integrate.phi5 = work + 6 * neqn + 5;
 
 	integrate.neqn = neqn;
 	integrate.f = f;
-
-	integrate.maxk = 1;
 
 	double halfu = 0.5;
 	while (1 + halfu > 1)
@@ -68,9 +61,6 @@ void Ode::step()
 		set_weights();
 
 		integrate.take_step();
-
-		std::cout << integrate.k;
-		std::cout << ' ';
 
 		if (integrate.crash)
 		{			
@@ -144,9 +134,12 @@ void Ode::end_interp()
 {
 	integrate.xout = tout;
 	integrate.interp();
+	for (size_t l = 0; l < neqn; l++)
+	{
+		y[l] = integrate.yout[l];
+	}
 	iflag = 2;
 	t = tout;
-	told = t;
 	isgnold = isgn;
 }
 
@@ -154,9 +147,12 @@ void Ode::end_extrap()
 {
 	integrate.h = tout - integrate.x;
 	integrate.extrap();
+	for (size_t l = 0; l < neqn; l++)
+	{
+		y[l] = integrate.yout[l];
+	}
 	iflag = 2;
 	t = tout;
-	told = t;
 	isgnold = isgn;
 }
 
@@ -169,7 +165,6 @@ void Ode::end_work()
 		y[l] = integrate.y[l];
 	}
 	t = integrate.x;
-	told = t;
 	isgnold = 1;
 }
 
@@ -183,7 +178,6 @@ void Ode::end_tol()
 		y[l] = integrate.y[l];
 	}
 	t = integrate.x;
-	told = t;
 	isgnold = 1;
 }
 

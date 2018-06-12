@@ -1,4 +1,6 @@
 #include "Integrate.h"
+#include <algorithm>
+
 #define phi(j, i) phi[j + i * neqn]
 
 

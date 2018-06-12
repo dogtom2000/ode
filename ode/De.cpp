@@ -16,11 +16,6 @@ De::De(void(*f)(double, double*, double*), unsigned char neqn, double* y, double
 	destep.p		= work + 4 * neqn;
 	destep.wt		= work + 5 * neqn;
 	destep.phi		= work + 6 * neqn;
-	destep.phi1 = work + 6 * neqn + 1;
-	destep.phi2 = work + 6 * neqn + 2;
-	destep.phi3 = work + 6 * neqn + 3;
-	destep.phi4 = work + 6 * neqn + 4;
-	destep.phi5 = work + 6 * neqn + 5;
 
 	destep.f = f;
 

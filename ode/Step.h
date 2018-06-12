@@ -1,28 +1,28 @@
 #pragma once
-#include <algorithm>
-#include <cmath>
+
 class Step
 {
 public:
 	// constants
+	const double gstar[13]{ 0.500, 0.0833, 0.0417, 0.0264, 0.0188, 0.0143, 0.0114, 0.00936, 0.00789, 0.00679, 0.00592, 0.00524, 0.00468 };
+	const double two[13]{ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
 
 	// constructor and destructor
 	Step();
 	~Step();
 
 	// logical
-	bool crash;
 	bool start;
+	bool crash;
 	bool phase1;
 	bool nornd;
-	bool step_success;
+	bool step_fail;
 
 	// variables
 	unsigned int neqn;
+	unsigned int ifail;
+
 	unsigned int ns;
-	unsigned int nsp1;
-	unsigned int nsp2;
-	unsigned int nsm2;
 	unsigned int k;
 	unsigned int knew;
 	unsigned int kold;
@@ -30,23 +30,22 @@ public:
 	unsigned int kp2;
 	int km1;
 	int km2;
-	unsigned int ifail;
-
-	unsigned int maxk;
-
+	
 	double twou;
 	double fouru;
+
 	double eps;
+	double err;
 	double round;
 	double erk;
 	double erkp1;
 	double erkm1;
 	double erkm2;
-	double err;
-
+	
 	double h;
 	double hold;
 	double absh;
+
 	double x;
 	double xold;
 	double xout;
@@ -59,35 +58,31 @@ public:
 	double* wt;
 	double* p;
 	double* phi;
-	double* phi1;
-	double* phi2;
-	double* phi3;
-	double* phi4;
-	double* phi5;
 
 	// fixed size arrays
 	double alpha[12];
 	double beta[12];
 	double psi[12];
-	double sigma[13];
-	double rho[13];
-
+	double sigma[13]{ 1.0 };
+	
 	double v[12];
 	double w[12];
-	double wi[12];
-	double g[13];
-	double gi[13];
-	const double gstar[13]{ 0.500, 0.0833, 0.0417, 0.0264, 0.0188, 0.0143, 0.0114, 0.00936, 0.00789, 0.00679, 0.00592, 0.00524, 0.00468 };
-	const double two[13]{ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
+	double g[13]{ 1.0, 0.5 };
+
+	double wi[13];
+	double gi[13]{ 1.0 };
+	double rho[13]{ 1.0 };
 
 	// member functions
 	void(*f)(double, double*, double*);
 
-	// functions called from De
+	// functions called from Ode
 	void take_step();
 	void interp();
 	void extrap();
 	
+
+	// block functions
 	void block0();
 	void block1();
 	void block2();

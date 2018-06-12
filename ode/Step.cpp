@@ -1,42 +1,49 @@
 #include "Step.h"
-#include <iostream>
+#include <algorithm>
 
+// logic to use switch statement as an arithmetic if
 #define aif(a) ((a > 0) ? 'p' : ((a < 0) ? 'n' : '0'))
+// plus 1, minus 1 used to convert between 0/1 based indices
 #define p1(a) (a + 1)
 #define m1(a) (a - 1)
+// 2d addressing logic for phi
 #define phi(j, i) phi[j + i * neqn]
-
-using namespace std;
 
 Step::Step()
 {
-	g[0] = 1.0;
-	g[1] = 0.5;
-	sigma[0] = 1.0;
-	gi[0] = 1.0;
-	rho[0] = 1.0;
 }
 
 Step::~Step()
 {
 }
 
+
 void Step::take_step()
 {
+	// test input parameters, initialize
+	// if input is invalid return
 	block0();
 	if (crash) { return; }
 
 	while (true)
 	{
+		// compute coefficients of formulas
 		block1();
+		// predict solution, estimate local errors
 		block2();
-		if (!step_success)
+	
+		if (step_fail)
 		{
+			// failed step:
+			// restore input parameters, select new order/step size
+			// if step size is too small return, otherwise go to block 1
 			block3();
 			if (crash) { return; }
 		}
 		else
 		{
+			// successful step:
+			// correct solution, select new order/step size, return
 			block4();
 			return;
 		}
@@ -51,7 +58,7 @@ void Step::interp()
 
 	for (size_t i = 0; i < ki; i++)
 	{
-		unsigned int temp1 = i + 1;
+		size_t temp1 = i + 1;
 		wi[i] = 1.0 / temp1;
 	}
 
@@ -59,11 +66,11 @@ void Step::interp()
 
 	for (size_t j = 1; j < ki; j++)
 	{
-		unsigned int jm1 = j - 1;
+		size_t jm1 = j - 1;
 		double psijm1 = psi[jm1];
 		double gamma = (hi + term) / psijm1;
 		double eta = hi / psijm1;
-		unsigned int limit1 = kip1 - j - 1;
+		size_t limit1 = kip1 - j - 1;
 		for (size_t i = 0; i < limit1; i++)
 		{
 			wi[i] = gamma * wi[i] - eta * wi[i + 1];
@@ -81,7 +88,7 @@ void Step::interp()
 
 	for (size_t j = 0; j < ki; j++)
 	{
-		int i = kip1 - p1(j);
+		size_t i = kip1 - p1(j);
 		double temp2 = gi[m1(i)];
 		double temp3 = rho[m1(i)];
 		for (size_t l = 0; l < neqn; l++)
@@ -107,31 +114,34 @@ void Step::extrap()
 
 void Step::block0()
 {
-	// test if step size and eps are too small
+	// test input parameters, initialize
+	// if step size or epsilon are too small crash and return
 	crash = false;
 	test_inputs();
 	if (crash) { return; }
 
-	// if this is the first step inialize
+	// if this is the first step inialize starting parameters
 	if (start) { initialize(); }
 
-	// number of failed iterations is 0
+	// initialize failed step counter to 0
 	ifail = 0;
 }
 
 void Step::block1()
 {
-	// set values offsets
+	// set offset values for k
 	kp1 = k + 1;
 	kp2 = k + 2;
 	km1 = k - 1;
 	km2 = k - 2;
 
-	// if step size has changed reset step counter
+	// if step size has changed reset step size counter
 	if (h != hold) { ns = 0; }
-	ns = min(ns + 1, kold + 1);
-	nsp1 = ns + 1;
 
+	// increase step size counter, limit to kold + 1
+	ns = std::min(ns + 1, kold + 1);
+
+	// coefficients are only updated if k >= ns
 	if (k >= ns)
 	{
 		compute_coefficients();
@@ -145,27 +155,37 @@ void Step::block1()
 
 void Step::block2()
 {
+	// phistar is only calculated if k > ns
 	if (k > ns) { phi_star(); }
 
+	// predict the value p at x + h
 	predict();
 
+	// increment x and calculate derivatives at x + h, p
 	xold = x;
 	x += h;
 	f(x, p, yp);
 
+	// estimate the error at orders k, k-1, k-2
+	// if error is greater than epsilon the step fails
 	estimate_error();
-	step_success = err <= eps ? true : false;
+	step_fail = err <= eps ? false : true;
 }
 
 void Step::block3()
 {
+	// on a step failure end the starting phase
 	phase1 = false;
-	x = xold;
 
+	// restore input parameters
 	restore();
 
+	// increment failed step counter
 	ifail++;
 
+	// halve step size
+	// if more than 2 failed steps reset step size
+	// if more than 3 failed steps reduce order to 1
 	order_one();
 }
 
@@ -174,12 +194,18 @@ void Step::block4()
 	kold = k;
 	hold = h;
 
+	// correct the value p to y at n + 1
 	correct();
 
+	// calculate the derivatives at x(n + 1), y(n + 1)
 	f(x, y, yp);
 
+	// update the divided differences (phi) for the next step
 	update_dif();
 
+	// if k was reduced or k = 12 the end the starting phase
+	// if in the starting phase increase the order and double step size
+	// otherwise determine new order and step size
 	erkp1 = 0.0;
 	if ((knew == km1) || (k == 12)) { phase1 = false; }
 	if (phase1)
@@ -196,7 +222,7 @@ void Step::block4()
 
 void Step::test_inputs()
 {
-	// test if step size is too small, if it is increase it and crash
+	// if step size is too small, increase step size, crash, and return
 	if (abs(h) < fouru * abs(x))
 	{
 		h = fouru * abs(x) * sgn(h);
@@ -204,7 +230,7 @@ void Step::test_inputs()
 		return;
 	}
 	
-	// calculate sum to compare to eps in order to control round off error
+	// calculate round, round is greater than the largest value in y multiplied by 2u
 	round = 0.0;
 	for (size_t l = 0; l < neqn; l++)
 	{
@@ -212,7 +238,7 @@ void Step::test_inputs()
 	}
 	round = twou * sqrt(round);
 
-	// test if eps is too small, if it is increase it and crash
+	// if epsilon is too small, increase epsilon, crash, and return
 	if (0.5 * eps < round)
 	{
 		eps = 2.0 * round * (1.0 + fouru);
@@ -223,11 +249,19 @@ void Step::test_inputs()
 
 void Step::initialize()
 {
-	// call f to evaluate derivatives
+	// initialize values
+	hold = 0.0;
+	k = 1;
+	kold = 0;
+	start = false;
+	phase1 = true;
+	nornd = true;
+
+	// evaluate derivatives at x, y
 	f(x, y, yp);
 	
 	// initialize phi
-	// calculate sum to compare to h in order to select initial step size
+	// calculate sum, sum is greater than the largeset value of yp
 	double sum = 0.0;
 	for (size_t l = 0; l < neqn; l++)
 	{
@@ -237,23 +271,15 @@ void Step::initialize()
 	}
 	sum = sqrt(sum);
 	
-	// test if step size is too small, if it is increase it
+	// if step size is too small for desired epsilon, increase step size
 	absh = abs(h);
 	if (eps < 16.0 * sum * h * h)
 	{
 		absh = 0.25 * sqrt(eps / sum);
 	}
-	h = max(absh, fouru * abs(x)) * sgn(h);
+	h = std::max(absh, fouru * abs(x)) * sgn(h);
 
-	// initialize values
-	hold = 0.0;
-	k = 1;
-	kold = 0;
-	start = false;
-	phase1 = true;
-	nornd = true;
-
-	// test if eps is small enough to enable propagated round off control
+	// if epsilon is less than 100 * round, use propogated round off control
 	if (0.5 * eps < 100.0 * round)
 	{
 		nornd = false;
@@ -269,10 +295,10 @@ void Step::compute_coefficients()
 	beta[m1(ns)] = 1.0;
 	alpha[m1(ns)] = 1.0 / ns;
 	double temp1 = h * ns;
-	sigma[m1(nsp1)] = 1.0;
+	sigma[ns] = 1.0;
 	if (k > ns)
 	{
-		for (size_t i = m1(nsp1); i < k; i++)
+		for (size_t i = ns; i < k; i++)
 		{
 			size_t im1 = i - 1;
 			double temp2 = psi[im1];
@@ -302,10 +328,9 @@ void Step::update_vw()
 	{
 		double temp4 = k * kp1;
 		v[m1(k)] = 1.0 / temp4;
-		nsm2 = ns - 2;
 		if (ns >= 3)
 		{
-			for (size_t j = 0; j < nsm2; j++)
+			for (size_t j = 0; j < ns - 2; j++)
 			{
 				size_t i = k - p1(j);
 				v[m1(i)] -= alpha[j + 1] * v[m1(i) + 1];
@@ -320,13 +345,12 @@ void Step::update_vw()
 		v[iq] -= temp5 * v[iq + 1];
 		w[iq] = v[iq];
 	}
-	g[m1(nsp1)] = w[0];
+	g[ns] = w[0];
 }
 
 void Step::compute_g()
 {
-	nsp2 = ns + 2;
-	for (size_t i = m1(nsp2); i < kp1; i++)
+	for (size_t i = ns + 1; i < kp1; i++)
 	{
 		size_t limit2 = kp2 - p1(i);
 		double temp6 = alpha[i - 1];
@@ -340,7 +364,7 @@ void Step::compute_g()
 
 void Step::phi_star() 
 {
-	for (size_t i = m1(nsp1); i < k; i++)
+	for (size_t i = ns; i < k; i++)
 	{
 		double temp1 = beta[i];
 		for (size_t l = 0; l < neqn; l++)
@@ -430,7 +454,7 @@ void Step::estimate_error()
 	switch (aif(km2))
 	{
 	case 'p':
-		if (max(erkm1, erkm2) <= erk)
+		if (std::max(erkm1, erkm2) <= erk)
 		{
 			knew = km1;
 		}
@@ -448,6 +472,8 @@ void Step::estimate_error()
 
 void Step::restore()
 {
+	x = xold;
+
 	for (size_t i = 0; i < k; i++)
 	{
 		double temp1 = 1.0 / beta[i];
@@ -541,6 +567,7 @@ void Step::update_h()
 			erkp1 += pow(phi(l, m1(kp2)) / wt[l], 2);
 		}
 		erkp1 = absh * gstar[m1(kp1)] * sqrt(erkp1);
+
 		if (k == 1)
 		{
 			if (erkp1 < 0.5 * erk)
@@ -551,15 +578,12 @@ void Step::update_h()
 		}
 		else
 		{
-			if (erkm1 <= min(erk, erkp1))
+			if (erkm1 <= std::min(erk, erkp1))
 			{
 				k = km1;
 				erk = erkm1;
 			}
-			else if ((erkp1 >= erk) || (k == 12))
-			{
-			}
-			else
+			else if ((erkp1 < erk) && (k < 12))
 			{
 				k = kp1;
 				erk = erkp1;
@@ -567,30 +591,6 @@ void Step::update_h()
 		}
 	}
 
-
-
-	// if knew == km1 goto 455
-
-	// if kp1 > ns goto 460
-	
-	// else do loop
-
-	// if k > 1 goto 445
-
-	// if erkp1 >= 0.5 * erk goto 460
-
-	// else goto 450
-
-	// 445 goto 450, 455, 460
-
-	// 450 goto 460
-
-	// 455 goto 460
-
-
-
-
-	// 460
 	double hnew = h + h;
 	if (0.5 * eps >= erk * two[k])
 	{
@@ -605,8 +605,8 @@ void Step::update_h()
 	}
 	size_t temp2 = k + 1;
 	double r = pow((0.5 * eps / erk), 1.0 / temp2);
-	hnew = absh * max(0.5, min(0.9, r));
-	hnew = max(hnew, fouru * abs(x)) * sgn(h);
+	hnew = absh * std::max(0.5, std::min(0.9, r));
+	hnew = std::max(hnew, fouru * abs(x)) * sgn(h);
 	h = hnew;
 	return;
 }

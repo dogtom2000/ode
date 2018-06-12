@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cmath>
-#include <algorithm>
 #include "Integrate.h"
 #include "Step.h"
 
@@ -9,7 +7,7 @@ class Ode
 {
 public:
 	// constants
-	const unsigned int maxnum{ 5000 };
+	const unsigned int maxnum{ 5000000 };
 
 	// constructor and destructor
 	Ode(void(*)(double, double*, double*), unsigned int, double*, double, double, double, double, double*);
@@ -34,7 +32,6 @@ public:
 	double abseps;
 
 	double t;
-	double told;
 	double tout;
 	double tend;
 
@@ -43,7 +40,6 @@ public:
 
 	// arrays
 	double* y;
-	double* yout;
 
 	// integrator
 	Step integrate;
