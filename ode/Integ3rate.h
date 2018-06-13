@@ -1,6 +1,6 @@
 #pragma once
 
-class Step
+class Integrate
 {
 public:
 	// constants
@@ -8,8 +8,8 @@ public:
 	const double two[13]{ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
 
 	// constructor and destructor
-	Step();
-	~Step();
+	Integrate();
+	~Integrate();
 
 	// logical
 	bool start;

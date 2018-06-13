@@ -18,6 +18,7 @@ public:
 	bool nornd;
 	bool step_fail;
 
+	// variables
 	unsigned int neqn;
 	unsigned int ifail;
 
@@ -30,10 +31,6 @@ public:
 	int km1;
 	int km2;
 
-
-
-
-
 	double twou;
 	double fouru;
 
@@ -44,11 +41,11 @@ public:
 	double erkp1;
 	double erkm1;
 	double erkm2;
-	
+
 	double h;
 	double hold;
 	double absh;
-	
+
 	double x;
 	double xold;
 	double xout;
@@ -66,23 +63,25 @@ public:
 	double alpha[12];
 	double beta[12];
 	double psi[12];
-	double sigma[13];
-	
+	double sigma[13]{ 1.0 };
+
 	double v[12];
 	double w[12];
-	double g[13];
+	double g[13]{ 1.0, 0.5 };
 
-	double rho[13];
-	double wi[12];
-	double gi[13];
+	double wi[13];
+	double gi[13]{ 1.0 };
+	double rho[13]{ 1.0 };
 
 	// member functions
 	void(*f)(double, double*, double*);
 
+	// functions called from Ode
 	void take_step();
 	void interp();
 	void extrap();
 
+	// block functions
 	void block0();
 	void block1();
 	void block2();
@@ -91,7 +90,7 @@ public:
 
 	// block 0 functions
 	void test_inputs();
-	void setup();
+	void initialize();
 
 	// block 1 functions
 	void compute_coefficients();
@@ -117,4 +116,3 @@ public:
 	template <class T>
 	int sgn(T a) { return (a > T(0)) - (a < T(0)); }
 };
-

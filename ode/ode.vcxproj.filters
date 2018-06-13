@@ -15,27 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Step.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Integrate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Ode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Integrate.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Step.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Integrate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Ode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Integrate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

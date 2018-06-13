@@ -1,13 +1,12 @@
 #pragma once
 
 #include "Integrate.h"
-#include "Step.h"
 
 class Ode
 {
 public:
 	// constants
-	const unsigned int maxnum{ 5000000 };
+	const unsigned int maxnum{ 100000 };
 
 	// constructor and destructor
 	Ode(void(*)(double, double*, double*), unsigned int, double*, double, double, double, double, double*);
@@ -42,7 +41,7 @@ public:
 	double* y;
 
 	// integrator
-	Step integrate;
+	Integrate integrate;
 
 	// member functions
 	void step();

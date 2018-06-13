@@ -1,5 +1,6 @@
 #include "Ode.h"
 #include <algorithm>
+#include <cmath>
 
 Ode::Ode(void(*f)(double, double*, double*), unsigned int neqn, double* y, double t, double tout, double relerr, double abserr, double* work)
 	: neqn(neqn), y(y), t(t), tout(tout), relerr(relerr), abserr(abserr)
@@ -46,13 +47,13 @@ void Ode::step()
 
 	while (nostep < maxnum)
 	{
-		if (abs(integrate.x - t) >= absdel)
+		if (std::abs(integrate.x - t) >= absdel)
 		{
 			end_interp();
 			return;
 		}
 
-		if ((isgn < 0) && (abs(tout - integrate.x) < integrate.fouru * abs(integrate.x)))
+		if ((isgn < 0) && (std::abs(tout - integrate.x) < integrate.fouru * std::abs(integrate.x)))
 		{
 			end_extrap();
 			return;
@@ -82,7 +83,7 @@ bool Ode::test_inputs()
 {
 	integrate.eps = std::max(relerr, abserr);
 	isgn = sgn(iflag);
-	iflag = abs(iflag);
+	iflag = std::abs(iflag);
 
 	return true;
 }
@@ -90,7 +91,7 @@ bool Ode::test_inputs()
 void Ode::setup()
 {
 	del = tout - t;
-	absdel = abs(del);
+	absdel = std::abs(del);
 	tend = t + 10.0 * del;
 
 	if (isgn < 0) { tend = tout; }
@@ -106,7 +107,7 @@ void Ode::first_step()
 	integrate.start = true;
 	integrate.x = t;
 	delsgn = sgn(del);
-	integrate.h = sgn(tout - integrate.x) * std::max(abs(tout - integrate.x), integrate.fouru * abs(integrate.x));
+	integrate.h = sgn(tout - integrate.x) * std::max(std::abs(tout - integrate.x), integrate.fouru * std::abs(integrate.x));
 	for (size_t l = 0; l < neqn; l++)
 	{
 		integrate.y[l] = y[l];
@@ -115,10 +116,10 @@ void Ode::first_step()
 
 void Ode::set_weights()
 {
-	integrate.h = sgn(integrate.h) * std::min(abs(integrate.h), abs(tend - integrate.x));
+	integrate.h = sgn(integrate.h) * std::min(std::abs(integrate.h), std::abs(tend - integrate.x));
 	for (size_t l = 0; l < neqn; l++)
 	{
-		integrate.wt[l] = releps * abs(integrate.y[l]) + abseps;
+		integrate.wt[l] = releps * std::abs(integrate.y[l]) + abseps;
 	}
 }
 

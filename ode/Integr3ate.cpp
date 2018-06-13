@@ -1,5 +1,6 @@
-#include "Step.h"
+#include "Integrate.h"
 #include <algorithm>
+#include <cmath>
 
 // logic to use switch statement as an arithmetic if
 #define aif(a) ((a > 0) ? 'p' : ((a < 0) ? 'n' : '0'))
@@ -9,16 +10,16 @@
 // 2d addressing logic for phi
 #define phi(j, i) phi[j + i * neqn]
 
-Step::Step()
+Integrate::Integrate()
 {
 }
 
-Step::~Step()
+Integrate::~Integrate()
 {
 }
 
 
-void Step::take_step()
+void Integrate::take_step()
 {
 	// test input parameters, initialize
 	// if input is invalid return
@@ -50,7 +51,7 @@ void Step::take_step()
 	}
 }
 
-void Step::interp()
+void Integrate::interp()
 {
 	double hi = xout - x;
 	unsigned int ki = kold + 1;
@@ -103,7 +104,7 @@ void Step::interp()
 	}
 }
 
-void Step::extrap()
+void Integrate::extrap()
 {
 	f(x, y, yp);
 	for (size_t l = 0; l < neqn; l++)
@@ -112,7 +113,7 @@ void Step::extrap()
 	}
 }
 
-void Step::block0()
+void Integrate::block0()
 {
 	// test input parameters, initialize
 	// if step size or epsilon are too small crash and return
@@ -127,7 +128,7 @@ void Step::block0()
 	ifail = 0;
 }
 
-void Step::block1()
+void Integrate::block1()
 {
 	// set offset values for k
 	kp1 = k + 1;
@@ -153,7 +154,7 @@ void Step::block1()
 	}
 }
 
-void Step::block2()
+void Integrate::block2()
 {
 	// phistar is only calculated if k > ns
 	if (k > ns) { phi_star(); }
@@ -172,7 +173,7 @@ void Step::block2()
 	step_fail = err <= eps ? false : true;
 }
 
-void Step::block3()
+void Integrate::block3()
 {
 	// on a step failure end the starting phase
 	phase1 = false;
@@ -189,7 +190,7 @@ void Step::block3()
 	order_one();
 }
 
-void Step::block4()
+void Integrate::block4()
 {
 	kold = k;
 	hold = h;
@@ -220,12 +221,12 @@ void Step::block4()
 	}
 }
 
-void Step::test_inputs()
+void Integrate::test_inputs()
 {
 	// if step size is too small, increase step size, crash, and return
-	if (abs(h) < fouru * abs(x))
+	if (std::abs(h) < fouru * std::abs(x))
 	{
-		h = fouru * abs(x) * sgn(h);
+		h = fouru * std::abs(x) * sgn(h);
 		crash = true;
 		return;
 	}
@@ -247,7 +248,7 @@ void Step::test_inputs()
 	}
 }
 
-void Step::initialize()
+void Integrate::initialize()
 {
 	// initialize values
 	hold = 0.0;
@@ -272,12 +273,12 @@ void Step::initialize()
 	sum = sqrt(sum);
 	
 	// if step size is too small for desired epsilon, increase step size
-	absh = abs(h);
+	absh = std::abs(h);
 	if (eps < 16.0 * sum * h * h)
 	{
 		absh = 0.25 * sqrt(eps / sum);
 	}
-	h = std::max(absh, fouru * abs(x)) * sgn(h);
+	h = std::max(absh, fouru * std::abs(x)) * sgn(h);
 
 	// if epsilon is less than 100 * round, use propogated round off control
 	if (0.5 * eps < 100.0 * round)
@@ -290,7 +291,7 @@ void Step::initialize()
 	}
 }
 
-void Step::compute_coefficients()
+void Integrate::compute_coefficients()
 {
 	beta[m1(ns)] = 1.0;
 	alpha[m1(ns)] = 1.0 / ns;
@@ -312,7 +313,7 @@ void Step::compute_coefficients()
 	psi[m1(k)] = temp1;
 }
 
-void Step::initialize_vw()
+void Integrate::initialize_vw()
 {
 	for (size_t iq = 0; iq < k; iq++)
 	{
@@ -322,7 +323,7 @@ void Step::initialize_vw()
 	}
 }
 
-void Step::update_vw()
+void Integrate::update_vw()
 {
 	if (k > kold)
 	{
@@ -348,7 +349,7 @@ void Step::update_vw()
 	g[ns] = w[0];
 }
 
-void Step::compute_g()
+void Integrate::compute_g()
 {
 	for (size_t i = ns + 1; i < kp1; i++)
 	{
@@ -362,7 +363,7 @@ void Step::compute_g()
 	}
 }
 
-void Step::phi_star() 
+void Integrate::phi_star() 
 {
 	for (size_t i = ns; i < k; i++)
 	{
@@ -374,7 +375,7 @@ void Step::phi_star()
 	}
 }
 
-void Step::predict()
+void Integrate::predict()
 {
 	for (size_t l = 0; l < neqn; l++)
 	{
@@ -413,9 +414,9 @@ void Step::predict()
 	}
 }
 
-void Step::estimate_error()
+void Integrate::estimate_error()
 {
-	absh = abs(h);
+	absh = std::abs(h);
 	erkm2 = 0.0;
 	erkm1 = 0.0;
 	erk = 0.0;
@@ -470,7 +471,7 @@ void Step::estimate_error()
 	}
 }
 
-void Step::restore()
+void Integrate::restore()
 {
 	x = xold;
 
@@ -492,7 +493,7 @@ void Step::restore()
 	}
 }
 
-void Step::order_one()
+void Integrate::order_one()
 {
 	double temp2 = 0.5;
 	if (ifail > 3)
@@ -508,15 +509,15 @@ void Step::order_one()
 	}
 	h *= temp2;
 	k = knew;
-	if (abs(h) < fouru * abs(x))
+	if (std::abs(h) < fouru * std::abs(x))
 	{
 		crash = true;
-		h = fouru * abs(x) * sgn(h);
+		h = fouru * std::abs(x) * sgn(h);
 		eps *= 2;
 	}
 }
 
-void Step::correct()
+void Integrate::correct()
 {
 	double temp1 = h * g[m1(kp1)];
 	if (nornd)
@@ -537,7 +538,7 @@ void Step::correct()
 	}
 }
 
-void Step::update_dif()
+void Integrate::update_dif()
 {
 	for (size_t l = 0; l < neqn; l++)
 	{
@@ -553,7 +554,7 @@ void Step::update_dif()
 	}
 }
 
-void Step::update_h()
+void Integrate::update_h()
 {
 	if (knew == km1)
 	{
@@ -606,7 +607,7 @@ void Step::update_h()
 	size_t temp2 = k + 1;
 	double r = pow((0.5 * eps / erk), 1.0 / temp2);
 	hnew = absh * std::max(0.5, std::min(0.9, r));
-	hnew = std::max(hnew, fouru * abs(x)) * sgn(h);
+	hnew = std::max(hnew, fouru * std::abs(x)) * sgn(h);
 	h = hnew;
 	return;
 }
