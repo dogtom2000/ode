@@ -68,7 +68,7 @@ int main()
 	double work[neqn * 21];
 
 	double t = 0;
-	double tout = 2 * PI;
+	double tout = 2.0 * PI;
 	double relerr = 0;
 	double abserr = 2e-8;
 
@@ -92,6 +92,7 @@ int main()
 
 	
 	myDe.step();
+	
 	
 	//std::cout << '\n';
 	//std::cout << myDe.y[0];
