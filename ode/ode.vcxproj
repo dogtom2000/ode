@@ -115,6 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Diffeq.h" />
     <ClInclude Include="Integrate.h" />
     <ClInclude Include="Ode.h" />
   </ItemGroup>
@@ -122,6 +123,7 @@
     <ClCompile Include="Integrate.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Ode.cpp" />
+    <ClCompile Include="Diffeq.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
