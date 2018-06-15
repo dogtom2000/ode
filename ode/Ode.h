@@ -5,9 +5,6 @@
 class Ode
 {
 public:
-	// constants
-	const unsigned int maxnum{ 100000 };
-
 	// constructor and destructor
 	Ode(void(*)(double, double*, double*), unsigned int, double*, double, double, double, double, double*);
 	~Ode();
@@ -23,6 +20,7 @@ public:
 
 	unsigned int neqn;
 	unsigned int nostep;
+	unsigned int maxnum{ 5000 };
 	unsigned int kle4;
 
 	double relerr;

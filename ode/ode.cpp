@@ -93,7 +93,6 @@ void Ode::setup()
 	del = tout - t;
 	absdel = std::abs(del);
 	tend = t + 10.0 * del;
-
 	if (isgn < 0) { tend = tout; }
 	nostep = 0;
 	kle4 = 0;

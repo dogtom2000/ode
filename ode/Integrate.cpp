@@ -18,7 +18,6 @@ Integrate::~Integrate()
 {
 }
 
-
 void Integrate::take_step()
 {
 	// test input parameters, initialize

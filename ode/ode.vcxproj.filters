@@ -19,10 +19,10 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Integrate.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Diffeq.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
